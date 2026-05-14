@@ -32,7 +32,7 @@ def main():
         print(f"ncells={ncells}  years={firstyear - nspinup}..{lastyear}")
 
     # --- allocate input arrays ------------------------------------------------
-    prec_in      = np.zeros(ncells)
+    prec_in      = np.zeros(ncells) + 1e-5
     temp_mean_in = np.zeros(ncells) + 15.0
     swdown_in    = np.zeros(ncells) + 100.0
     lwnet_in     = np.zeros(ncells) + 100.0
@@ -66,10 +66,12 @@ def main():
         for month_idx, ndays in enumerate(NDAYMONTH):
             month = month_idx + 1        # 1-based
             for day in range(1, ndays + 1):
+    
+                temp_mean_in = np.random.randn(ncells) * 2 + 15.0
                 for hour in range(24):
 
                     if rank == 0:
-                        print(f"PYTHON LEVEL: {year:04d}-{month:02d}-{day:02d} {hour:02d}:00")
+                        pass#print(f"PYTHON LEVEL: {year:04d}-{month:02d}-{day:02d} {hour:02d}:00")
                     # Feed previous timestep's q_ca back as input.
                     np.copyto(q_ca_old_in, q_ca_out)
 

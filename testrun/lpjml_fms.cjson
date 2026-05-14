@@ -46,7 +46,7 @@
   "fire_on_grassland" : false,
   "gsi_phenology": true,    /* GSI phenology enabled */
   "with_lakes" : true,
-  "river_routing" : true,
+  "river_routing" : false,
   "zero_river" : false, /* set water within rivers to zero at restart */
   "landfrac_from_file" : false,
   "permafrost" : true,
