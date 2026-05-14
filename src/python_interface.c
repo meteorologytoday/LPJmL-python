@@ -6,7 +6,7 @@
 /**     "LPJmLCoupler".                                                             \n**/
 /**                                                                                \n**/
 /**     Three functions:                                                            \n**/
-/**       lpjml_init(config_filename, dt_fast=86400) -> dict                       \n**/
+/**       lpjml_init(config_filename, dt_fast=3600) -> dict                        \n**/
 /**       lpjml_update(year, month, day, hour, minute, seconds,                    \n**/
 /**                    prec_in, temp_mean_in, swdown_in, lwnet_in,                 \n**/
 /**                    t_flux_in, qflux_in, dedq_in, dhdt_in, drdt_in,             \n**/
@@ -121,10 +121,10 @@ static PyArrayObject *as_double_1d(PyObject *obj, const char *name,
 }
 
 /*---------------------------------------------------------------------------*/
-/* lpjml_init(config_filename, dt_fast=86400) -> dict                        */
+/* lpjml_init(config_filename, dt_fast=3600) -> dict                         */
 /*                                                                           */
-/*   Initialises LPJmL by calling lpj_init_() in driver.c.                  */
-/*   dt_fast is the fast-timestep length in seconds; default 86400 (one day) */
+/*   Initialises LPJmL by calling lpj_init_() in driver.c.                   */
+/*   dt_fast is the fast-timestep length in seconds; default 3600 (one hour) */
 /*   so that every lpjml_update() call performs a full day of physics.       */
 /*                                                                           */
 /*   Returns {"ncells": int, "firstyear": int, "lastyear": int,              */
@@ -135,7 +135,7 @@ static PyObject *py_lpjml_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   static char *kwlist[] = {"config_filename", "dt_fast", NULL};
   const char *config_filename;
-  int dt_fast = 86400;
+  int dt_fast = 3600;
 
   if (g_ncells >= 0) {
     PyErr_SetString(PyExc_RuntimeError,
@@ -162,11 +162,17 @@ static PyObject *py_lpjml_init(PyObject *self, PyObject *args, PyObject *kwargs)
   lpj_init_(&dt_fast, config_filename, &ncells, &firstyear, &lastyear, &nspinup);
   g_ncells = ncells;
 
-  return Py_BuildValue("{s:i,s:i,s:i,s:i}",
+  int rank = 0;
+#ifdef USE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  return Py_BuildValue("{s:i,s:i,s:i,s:i,s:i}",
                        "ncells",    ncells,
                        "firstyear", firstyear,
                        "lastyear",  lastyear,
-                       "nspinup",   nspinup);
+                       "nspinup",   nspinup,
+                       "rank",      rank);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,13 +380,14 @@ static PyMethodDef LPJmLCoupler_methods[] = {
   {"lpjml_init",
    (PyCFunction)py_lpjml_init,
    METH_VARARGS | METH_KEYWORDS,
-   "lpjml_init(config_filename, dt_fast=86400) -> dict\n"
+   "lpjml_init(config_filename, dt_fast=3600) -> dict\n"
    "\n"
    "Initialise LPJmL.  Returns a dict with keys:\n"
    "  ncells    -- number of local land cells on this MPI rank\n"
    "  firstyear -- first simulation year\n"
    "  lastyear  -- last  simulation year\n"
-   "  nspinup   -- number of spinup years\n"},
+   "  nspinup   -- number of spinup years\n"
+   "  rank      -- MPI rank of this process (0 on non-MPI builds)\n"},
 
   {"lpjml_update",
    (PyCFunction)py_lpjml_update,
