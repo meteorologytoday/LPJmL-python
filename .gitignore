@@ -2,3 +2,5 @@ build/
 *.so
 *.swp
 __pycache__/
+sbatch.*.out
+sbatch.*.err
